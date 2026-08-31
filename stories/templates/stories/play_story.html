@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Main Animation */
+    .story-card {
+        animation: slideUp 0.8s ease-out;
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 40px;
+        max-width: 800px;
+        margin: 50px auto;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .typewriter h2 {
+        overflow: hidden; 
+        border-right: .15em solid orange; 
+        white-space: nowrap; 
+        margin: 0 auto; 
+        letter-spacing: .15em; 
+        animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .progress-bar {
+        width: {{ progress }}%;
+        height: 10px;
+        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+        border-radius: 10px;
+        transition: width 1s ease-in-out;
+    }
+
+    /* Choice Buttons */
+    .choice-btn {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        margin: 10px 0;
+        border: 2px solid #2575fc;
+        background: transparent;
+        color: #2575fc;
+        border-radius: 30px;
+        text-align: center;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .choice-btn:hover {
+        background: #2575fc;
+        color: white;
+        transform: scale(1.02);
+    }
+</style>
+
+<div class="container">
+    <div class="progress-container">
+        <div class="progress-bar"></div>
+    </div>
+
+    <div class="story-card">
+        <div class="typewriter">
+            <p class="text-muted">Step {{ node.step_number }} of 20</p>
+            <p class="lead" style="font-size: 1.5rem; line-height: 1.8;">
+                {{ node.text }}
+            </p>
+        </div>
+
+        <hr>
+
+        <div class="choices-section">
+            {% if node.is_ending %}
+                <h3 class="text-center">The End</h3>
+                <a href="{% url 'story_list' %}" class="choice-btn">Back to Library</a>
+            {% else %}
+                {% for choice in choices %}
+                    <a href="{% url 'play_story' story.id choice.next_node.id %}" class="choice-btn">
+                        {{ choice.choice_text }}
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

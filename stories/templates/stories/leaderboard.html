@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — StoryForge{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <div class="text-center mb-5">
+    <p class="forge-eyebrow mb-2">✦ Hall of Fame ✦</p>
+    <h1 class="forge-title" style="font-size:2.5rem;">Leaderboard</h1>
+    <p class="text-silver fst-italic">The most beloved adventures in the realm</p>
+    <hr class="gold-divider">
+  </div>
+
+  <div class="row g-5">
+
+    <!-- Most Played -->
+    <div class="col-lg-6">
+      <h2 class="forge-title mb-4" style="font-size:1.4rem;">
+        <i class="bi bi-fire me-2" style="color:#e8643c;"></i>Most Played
+      </h2>
+      {% for story in most_played %}
+      <div class="forge-panel p-3 mb-3 d-flex align-items-center gap-3 fade-in"
+           style="animation-delay:{{ forloop.counter0 }}00ms">
+        <div class="text-center" style="min-width:2.5rem;">
+          {% if forloop.counter == 1 %}<span style="font-size:1.5rem;">🥇</span>
+          {% elif forloop.counter == 2 %}<span style="font-size:1.5rem;">🥈</span>
+          {% elif forloop.counter == 3 %}<span style="font-size:1.5rem;">🥉</span>
+          {% else %}<span class="text-silver" style="font-family:'Cinzel',serif;font-size:1rem;">{{ forloop.counter }}</span>{% endif %}
+        </div>
+        <span style="font-size:2rem;">{{ story.cover_emoji }}</span>
+        <div class="flex-grow-1">
+          <div class="card-title-forge" style="font-size:.95rem;">{{ story.title }}</div>
+          <div class="text-silver" style="font-size:.8rem;">{{ story.get_genre_display }}</div>
+        </div>
+        <div class="text-end">
+          <div class="text-gold" style="font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;">{{ story.play_count }}</div>
+          <div class="text-silver" style="font-size:.7rem;">plays</div>
+        </div>
+        <a href="{% url 'story_detail' story.id %}" class="btn-forge" style="font-size:.7rem;padding:.3rem .8rem;">Play</a>
+      </div>
+      {% empty %}
+      <p class="text-silver fst-italic text-center py-4">No stories played yet.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Top Rated -->
+    <div class="col-lg-6">
+      <h2 class="forge-title mb-4" style="font-size:1.4rem;">
+        <i class="bi bi-star-fill me-2 text-gold"></i>Top Rated
+      </h2>
+      {% for story in top_rated %}
+      <div class="forge-panel p-3 mb-3 d-flex align-items-center gap-3 fade-in"
+           style="animation-delay:{{ forloop.counter0 }}00ms">
+        <div class="text-center" style="min-width:2.5rem;">
+          {% if forloop.counter == 1 %}<span style="font-size:1.5rem;">🥇</span>
+          {% elif forloop.counter == 2 %}<span style="font-size:1.5rem;">🥈</span>
+          {% elif forloop.counter == 3 %}<span style="font-size:1.5rem;">🥉</span>
+          {% else %}<span class="text-silver" style="font-family:'Cinzel',serif;font-size:1rem;">{{ forloop.counter }}</span>{% endif %}
+        </div>
+        <span style="font-size:2rem;">{{ story.cover_emoji }}</span>
+        <div class="flex-grow-1">
+          <div class="card-title-forge" style="font-size:.95rem;">{{ story.title }}</div>
+          <div class="text-silver" style="font-size:.8rem;">{{ story.get_genre_display }}</div>
+        </div>
+        <div class="text-end">
+          <div class="text-gold" style="font-family:'Cinzel',serif;font-size:1.1rem;font-weight:700;">
+            {{ story.avg_r|default:"—" }}★
+          </div>
+          <div class="text-silver" style="font-size:.7rem;">avg rating</div>
+        </div>
+        <a href="{% url 'story_detail' story.id %}" class="btn-forge" style="font-size:.7rem;padding:.3rem .8rem;">Play</a>
+      </div>
+      {% empty %}
+      <p class="text-silver fst-italic text-center py-4">No ratings yet.</p>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

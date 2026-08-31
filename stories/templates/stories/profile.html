@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }} — Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row g-4">
+
+    <!-- LEFT: Profile Card -->
+    <div class="col-lg-4">
+      <div class="forge-panel p-4 text-center mb-4 fade-in">
+        <div style="font-size:5rem;">{{ profile.avatar_emoji }}</div>
+        <h2 class="forge-title mt-2" style="font-size:1.6rem;">{{ user.username }}</h2>
+        {% if user.get_full_name %}
+        <p class="text-silver" style="font-size:.9rem;">{{ user.get_full_name }}</p>
+        {% endif %}
+        <p class="text-silver" style="font-size:.85rem;">{{ user.email }}</p>
+
+        {% if profile.bio %}
+        <hr class="gold-divider" style="max-width:200px;">
+        <p style="font-style:italic;font-size:.95rem;color:var(--parchment);">{{ profile.bio }}</p>
+        {% endif %}
+
+        <hr class="gold-divider" style="max-width:200px;">
+
+        <!-- Stats -->
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <div class="text-gold" style="font-size:1.4rem;font-weight:700;">{{ bookmarks|length }}</div>
+            <div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--silver);">Saved</div>
+          </div>
+          <div class="col-4">
+            <div class="text-gold" style="font-size:1.4rem;font-weight:700;">{{ ratings|length }}</div>
+            <div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--silver);">Rated</div>
+          </div>
+          <div class="col-4">
+            <div class="text-gold" style="font-size:1.4rem;font-weight:700;">{{ comments|length }}</div>
+            <div style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--silver);">Comments</div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <a href="{% url 'edit_profile' %}" class="btn-forge btn-forge-fill" style="font-size:.75rem;">
+            <i class="bi bi-pencil me-1"></i> Edit Profile
+          </a>
+        </div>
+
+        <p class="text-silver mt-3" style="font-size:.75rem;">
+          Member since {{ user.date_joined|date:"M Y" }}
+        </p>
+      </div>
+    </div>
+
+    <!-- RIGHT: Tabs -->
+    <div class="col-lg-8">
+
+      <!-- Tab nav -->
+      <ul class="nav mb-4" style="border-bottom:1px solid rgba(201,150,63,.2);gap:.5rem;">
+        <li class="nav-item">
+          <button class="nav-forge active" id="tab-bookmarks" onclick="showTab('bookmarks')"
+                  style="border-bottom:2px solid var(--gold);border-radius:0;padding:.5rem .9rem;">
+            🔖 Bookmarks ({{ bookmarks|length }})
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-forge" id="tab-ratings" onclick="showTab('ratings')"
+                  style="border-bottom:2px solid transparent;border-radius:0;padding:.5rem .9rem;">
+            ⭐ Ratings ({{ ratings|length }})
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-forge" id="tab-comments" onclick="showTab('comments')"
+                  style="border-bottom:2px solid transparent;border-radius:0;padding:.5rem .9rem;">
+            💬 Comments ({{ comments|length }})
+          </button>
+        </li>
+      </ul>
+
+      <!-- BOOKMARKS TAB -->
+      <div id="panel-bookmarks" class="tab-panel">
+        {% for bm in bookmarks %}
+        <div class="forge-panel p-3 mb-3 d-flex align-items-center gap-3">
+          <span style="font-size:2rem;">{{ bm.story.cover_emoji }}</span>
+          <div class="flex-grow-1">
+            <div class="card-title-forge" style="font-size:.95rem;">{{ bm.story.title }}</div>
+            <div class="text-silver" style="font-size:.8rem;">{{ bm.story.get_genre_display }} · {{ bm.story.node_count }} scenes</div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{% url 'story_play' bm.story.id %}" class="btn-forge btn-forge-fill" style="font-size:.72rem;padding:.3rem .9rem;">Play</a>
+            <a href="{% url 'story_detail' bm.story.id %}" class="btn-forge" style="font-size:.72rem;padding:.3rem .9rem;">Info</a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="forge-panel p-4 text-center">
+          <p class="text-silver fst-italic">No bookmarks yet.</p>
+          <a href="{% url 'homepage' %}" class="btn-forge mt-2" style="font-size:.75rem;">Browse Stories</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- RATINGS TAB -->
+      <div id="panel-ratings" class="tab-panel" style="display:none;">
+        {% for r in ratings %}
+        <div class="forge-panel p-3 mb-3 d-flex align-items-center gap-3">
+          <span style="font-size:2rem;">{{ r.story.cover_emoji }}</span>
+          <div class="flex-grow-1">
+            <div class="card-title-forge" style="font-size:.95rem;">{{ r.story.title }}</div>
+            <div class="text-gold" style="font-size:1rem;">
+              {% for i in "12345" %}{% if forloop.counter <= r.stars %}★{% else %}<span style="color:rgba(201,150,63,.25)">★</span>{% endif %}{% endfor %}
+            </div>
+          </div>
+          <a href="{% url 'story_detail' r.story.id %}" class="btn-forge" style="font-size:.72rem;padding:.3rem .9rem;">View</a>
+        </div>
+        {% empty %}
+        <div class="forge-panel p-4 text-center">
+          <p class="text-silver fst-italic">No ratings yet. Play some stories!</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- COMMENTS TAB -->
+      <div id="panel-comments" class="tab-panel" style="display:none;">
+        {% for c in comments %}
+        <div class="forge-panel p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <a href="{% url 'story_detail' c.story.id %}" class="text-gold" style="font-family:'Cinzel',serif;font-size:.8rem;">
+              {{ c.story.title }}
+            </a>
+            <span class="text-silver" style="font-size:.75rem;">{{ c.created_at|timesince }} ago</span>
+          </div>
+          <p class="mb-0" style="font-size:.95rem;">{{ c.text }}</p>
+        </div>
+        {% empty %}
+        <div class="forge-panel p-4 text-center">
+          <p class="text-silver fst-italic">No comments yet.</p>
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[id^="tab-"]').forEach(b => {
+    b.style.borderBottomColor = 'transparent';
+    b.classList.remove('active');
+  });
+  document.getElementById('panel-' + name).style.display = 'block';
+  const btn = document.getElementById('tab-' + name);
+  btn.style.borderBottomColor = 'var(--gold)';
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

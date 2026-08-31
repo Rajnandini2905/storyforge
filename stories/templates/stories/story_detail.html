@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ story.title }} — StoryForge{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <a href="{% url 'homepage' %}" class="d-inline-flex align-items-center gap-2 mb-4"
+         style="color:var(--silver);text-decoration:none;font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;">
+        <i class="bi bi-chevron-left"></i> Library
+      </a>
+
+      <div class="text-center mb-4">
+        <div style="font-size:6rem;margin-bottom:0.5rem;filter:drop-shadow(0 0 20px rgba(201,150,63,0.3));">
+          {{ story.cover_emoji }}
+        </div>
+        <span class="card-genre-badge">{{ story.get_genre_display }}</span>
+        <h1 class="section-title mt-2">{{ story.title }}</h1>
+        <hr class="gold-divider">
+      </div>
+
+      <div class="story-panel mb-4 fade-in">
+        <p style="font-size:1.15rem;line-height:1.8;font-style:italic;color:var(--parchment);">
+          {{ story.description }}
+        </p>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-4">
+          <div class="text-center p-3" style="background:rgba(26,22,38,0.7);border:1px solid rgba(201,150,63,0.15);border-radius:8px;">
+            <div style="font-size:1.5rem;color:var(--gold);">{{ node_count }}</div>
+            <div style="font-size:0.75rem;color:var(--silver);font-family:'Cinzel',serif;letter-spacing:0.1em;text-transform:uppercase;">Scenes</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="text-center p-3" style="background:rgba(26,22,38,0.7);border:1px solid rgba(201,150,63,0.15);border-radius:8px;">
+            <div style="font-size:1.5rem;color:var(--gold);">{{ endings|length }}</div>
+            <div style="font-size:0.75rem;color:var(--silver);font-family:'Cinzel',serif;letter-spacing:0.1em;text-transform:uppercase;">Endings</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="text-center p-3" style="background:rgba(26,22,38,0.7);border:1px solid rgba(201,150,63,0.15);border-radius:8px;">
+            <div style="font-size:1.5rem;">🔀</div>
+            <div style="font-size:0.75rem;color:var(--silver);font-family:'Cinzel',serif;letter-spacing:0.1em;text-transform:uppercase;">Branching</div>
+          </div>
+        </div>
+      </div>
+
+      {% if endings %}
+      <div class="mb-4 p-3" style="background:rgba(26,22,38,0.5);border:1px solid rgba(201,150,63,0.1);border-radius:8px;">
+        <p style="font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;color:var(--gold);text-transform:uppercase;margin-bottom:0.5rem;">
+          Possible Endings
+        </p>
+        <div class="d-flex gap-2 flex-wrap">
+          {% for ending in endings %}
+          <span class="badge rounded-pill"
+            style="{% if ending.ending_type == 'good' %}background:rgba(240,192,64,0.15);color:#f0c040;border:1px solid rgba(240,192,64,0.3);{% elif ending.ending_type == 'bad' %}background:rgba(192,64,64,0.15);color:#e07070;border:1px solid rgba(192,64,64,0.3);{% else %}background:rgba(136,136,204,0.15);color:#aaaaee;border:1px solid rgba(136,136,204,0.3);{% endif %}padding:5px 12px;font-family:'Crimson Pro',serif;font-size:0.9rem;">
+            {% if ending.ending_type == 'good' %}🌟{% elif ending.ending_type == 'bad' %}💀{% else %}🌙{% endif %}
+            {{ ending.get_ending_type_display }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-3 flex-wrap">
+        {% if has_progress %}
+          <a href="{% url 'story_play' story.id %}" class="btn-forge btn-forge-filled">
+            <i class="bi bi-play-fill me-1"></i> Continue Story
+          </a>
+          <a href="{% url 'story_restart' story.id %}" class="btn-forge"
+             onclick="return confirm('Restart from the beginning? Your progress will be lost.')">
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Start Over
+          </a>
+        {% else %}
+          <a href="{% url 'story_play' story.id %}" class="btn-forge btn-forge-filled">
+            <i class="bi bi-book me-1"></i> Begin Adventure
+          </a>
+        {% endif %}
+        <a href="{% url 'homepage' %}" class="btn-forge">
+          <i class="bi bi-grid me-1"></i> Library
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

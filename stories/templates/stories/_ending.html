@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}The End — {{ story.title }}{% endblock %}
+{% block content %}
+<div class="ending-screen ending-{{ node.ending_type|default:'neutral' }}">
+  <div class="ending-content">
+    <div class="ending-icon">
+      {% if node.ending_type == 'good' %}🌟{% elif node.ending_type == 'bad' %}💀{% else %}🌙{% endif %}
+    </div>
+    <div class="ending-badge">
+      ✦ {{ node.ending_type|capfirst|default:"Neutral" }} Ending ✦
+    </div>
+    <h1 class="ending-title">{{ node.title }}</h1>
+    <div class="ending-text">
+      {{ node.text|linebreaks }}
+    </div>
+    <div class="ending-actions">
+      <a href="{% url 'story_play' story_id=story.pk %}" class="sf-btn sf-btn-primary">↺ Play Again</a>
+      <a href="{% url 'story_detail' story_id=story.pk %}" class="sf-btn sf-btn-secondary">Story Details</a>
+      <a href="{% url 'homepage' %}" class="sf-btn sf-btn-secondary">🏠 Home</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ending-screen {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    animation: endingReveal 1.5s ease forwards;
+  }
+
+  .ending-content {
+    max-width: 620px;
+    width: 100%;
+    position: relative;
+    z-index: 2;
+  }
+
+  @keyframes endingReveal {
+    0% {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .ending-icon {
+    font-size: 72px;
+    margin-bottom: 24px;
+    animation: ending-pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes ending-pulse {
+
+    0%,
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+
+    50% {
+      transform: scale(1.15);
+      filter: brightness(1.3);
+    }
+  }
+
+  .ending-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    font-weight: bold;
+  }
+
+  .ending-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(32px, 5vw, 48px);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .ending-text {
+    font-family: 'Lora', serif;
+    font-size: 18px;
+    font-style: italic;
+    line-height: 1.9;
+    color: rgba(245, 237, 216, 0.9);
+    margin-bottom: 40px;
+  }
+
+  .ending-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Specific Ending Styles */
+  .ending-good {
+    background: radial-gradient(circle at center, rgba(109, 191, 130, 0.15) 0%, rgba(13, 11, 20, 0) 70%);
+  }
+
+  .ending-good .ending-badge {
+    color: #6dbf82;
+  }
+
+  .ending-good .ending-title {
+    color: #6dbf82;
+    text-shadow: 0 0 20px rgba(109, 191, 130, 0.5);
+  }
+
+  .ending-bad {
+    background: radial-gradient(circle at center, rgba(232, 112, 96, 0.15) 0%, rgba(13, 11, 20, 0) 70%);
+  }
+
+  .ending-bad .ending-badge {
+    color: #e87060;
+  }
+
+  .ending-bad .ending-title {
+    color: #e87060;
+    text-shadow: 0 0 20px rgba(232, 112, 96, 0.5);
+  }
+
+  .ending-neutral {
+    background: radial-gradient(circle at center, rgba(201, 150, 63, 0.15) 0%, rgba(13, 11, 20, 0) 70%);
+  }
+
+  .ending-neutral .ending-badge {
+    color: var(--gold);
+  }
+
+  .ending-neutral .ending-title {
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(201, 150, 63, 0.5);
+  }
+</style>
+{% endblock %}

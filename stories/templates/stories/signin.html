@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Sign In — StoryForge{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
+.auth-box{background:rgba(26,22,38,.92);border:1px solid rgba(201,150,63,.25);border-radius:16px;padding:2.5rem 2rem;backdrop-filter:blur(12px);box-shadow:0 20px 80px rgba(0,0,0,.5);max-width:420px;width:100%;animation:fadeIn .5s ease forwards}
+.auth-head{text-align:center;margin-bottom:2rem}
+.auth-head .ico{font-size:3rem;display:block;margin-bottom:.5rem}
+.auth-head h2{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:800;color:var(--gold);text-shadow:0 0 30px rgba(201,150,63,.4);margin-bottom:.25rem}
+.auth-head p{font-style:italic;color:var(--silver);font-size:.95rem}
+.field-wrap{margin-bottom:1.25rem}
+.field-label{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:.4rem}
+.forge-input{background:rgba(255,255,255,.06)!important;border:1px solid rgba(201,150,63,.3)!important;color:var(--parchment)!important;border-radius:8px!important;font-family:'Crimson Pro',serif!important;font-size:1rem!important;padding:.7rem 1rem!important;width:100%;transition:all .25s!important;display:block}
+.forge-input:focus{outline:none!important;border-color:var(--gold)!important;box-shadow:0 0 15px rgba(201,150,63,.2)!important;background:rgba(255,255,255,.09)!important}
+.forge-input::placeholder{color:rgba(184,176,200,.45)!important}
+.field-error{color:#ff9090;font-size:.83rem;margin-top:.3rem}
+.password-wrap{position:relative}
+.toggle-pw{position:absolute;right:.9rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--silver);cursor:pointer;font-size:1rem;padding:0;line-height:1}
+.toggle-pw:hover{color:var(--gold)}
+.error-box{background:rgba(200,60,60,.12);border:1px solid rgba(200,60,60,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;color:#ff9090;font-size:.9rem;display:flex;align-items:center;gap:.5rem}
+.btn-submit{font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase;padding:.85rem;border-radius:8px;border:none;background:var(--gold);color:var(--ink);font-weight:700;width:100%;cursor:pointer;transition:all .3s;margin-top:.5rem}
+.btn-submit:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,150,63,.4)}
+.auth-footer{text-align:center;margin-top:1.5rem;color:var(--silver);font-size:.9rem}
+.auth-footer a{color:var(--gold);text-decoration:none}
+.auth-footer a:hover{color:var(--gold-light);text-decoration:underline}
+.signup-prompt{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid rgba(201,150,63,.15);text-align:center}
+.btn-signup-link{font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.5rem;border-radius:8px;border:1px solid rgba(201,150,63,.4);background:transparent;color:var(--gold);text-decoration:none;display:inline-block;transition:all .25s}
+.btn-signup-link:hover{background:rgba(201,150,63,.1);border-color:var(--gold);color:var(--gold-light)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+
+    <div class="auth-head">
+      <span class="ico">🗝️</span>
+      <h2>Welcome Back</h2>
+      <p>Your story continues…</p>
+    </div>
+
+    {% if error %}
+    <div class="error-box">
+      <span>⚠️</span> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      <!-- USERNAME -->
+      <div class="field-wrap">
+        <label class="field-label" for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% for e in form.username.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="field-wrap">
+        <label class="field-label" for="{{ form.password.id_for_label }}">Password</label>
+        <div class="password-wrap">
+          {{ form.password }}
+          <button type="button" class="toggle-pw" onclick="togglePw(this)" title="Show/hide">👁</button>
+        </div>
+        {% for e in form.password.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn-submit">
+        Sign In →
+      </button>
+    </form>
+
+    <!-- Prompt to sign up -->
+    <div class="signup-prompt">
+      <p style="color:var(--silver);font-size:.9rem;margin-bottom:.75rem;">Don't have an account yet?</p>
+      <a href="{% url 'signup' %}" class="btn-signup-link">✦ Create Free Account</a>
+    </div>
+
+    <div class="auth-footer" style="margin-top:1rem;">
+      <a href="{% url 'homepage' %}" style="color:rgba(184,176,200,.4);font-size:.82rem;">
+        Continue as guest →
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePw(btn) {
+  const f = btn.previousElementSibling;
+  f.type = f.type === 'password' ? 'text' : 'password';
+  btn.textContent = f.type === 'password' ? '👁' : '🙈';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Create Account — StoryForge{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
+.auth-box{background:rgba(26,22,38,.92);border:1px solid rgba(201,150,63,.25);border-radius:16px;padding:2.5rem 2rem;backdrop-filter:blur(12px);box-shadow:0 20px 80px rgba(0,0,0,.5);max-width:440px;width:100%;animation:fadeIn .5s ease forwards}
+.auth-head{text-align:center;margin-bottom:2rem}
+.auth-head .ico{font-size:3rem;display:block;margin-bottom:.5rem}
+.auth-head h2{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:800;color:var(--gold);text-shadow:0 0 30px rgba(201,150,63,.4);margin-bottom:.25rem}
+.auth-head p{font-style:italic;color:var(--silver);font-size:.95rem}
+.field-wrap{margin-bottom:1.25rem}
+.field-label{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--silver);display:block;margin-bottom:.4rem}
+.forge-input{background:rgba(255,255,255,.06)!important;border:1px solid rgba(201,150,63,.3)!important;color:var(--parchment)!important;border-radius:8px!important;font-family:'Crimson Pro',serif!important;font-size:1rem!important;padding:.7rem 1rem!important;width:100%;transition:all .25s!important;display:block}
+.forge-input:focus{outline:none!important;border-color:var(--gold)!important;box-shadow:0 0 15px rgba(201,150,63,.2)!important;background:rgba(255,255,255,.09)!important}
+.forge-input::placeholder{color:rgba(184,176,200,.45)!important}
+.field-error{color:#ff9090;font-size:.83rem;margin-top:.3rem}
+.password-wrap{position:relative}
+.toggle-pw{position:absolute;right:.9rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--silver);cursor:pointer;font-size:1rem;padding:0;line-height:1}
+.toggle-pw:hover{color:var(--gold)}
+.strength-bar{height:4px;border-radius:2px;margin-top:.4rem;background:rgba(255,255,255,.08);overflow:hidden}
+.strength-fill{height:100%;border-radius:2px;transition:width .4s,background .4s;width:0}
+.strength-label{font-size:.73rem;color:var(--silver);margin-top:.2rem}
+.btn-submit{font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase;padding:.85rem;border-radius:8px;border:none;background:var(--gold);color:var(--ink);font-weight:700;width:100%;cursor:pointer;transition:all .3s;margin-top:.5rem}
+.btn-submit:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,150,63,.4)}
+.auth-footer{text-align:center;margin-top:1.5rem;color:var(--silver);font-size:.9rem}
+.auth-footer a{color:var(--gold);text-decoration:none}
+.auth-footer a:hover{color:var(--gold-light);text-decoration:underline}
+.req-list{list-style:none;padding:0;margin:.4rem 0 0;display:flex;flex-wrap:wrap;gap:.3rem}
+.req-list li{font-size:.72rem;padding:.15rem .5rem;border-radius:10px;background:rgba(255,255,255,.06);color:var(--silver);border:1px solid rgba(255,255,255,.08);transition:all .3s}
+.req-list li.met{background:rgba(100,200,100,.12);border-color:rgba(100,200,100,.3);color:#90ee90}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+
+    <div class="auth-head">
+      <span class="ico">✦</span>
+      <h2>Create Account</h2>
+      <p>Begin your adventure in StoryForge</p>
+    </div>
+
+    <form method="POST" novalidate id="signup-form">
+      {% csrf_token %}
+
+      <!-- USERNAME -->
+      <div class="field-wrap">
+        <label class="field-label" for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% for e in form.username.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="field-wrap">
+        <label class="field-label" for="id_password">Password</label>
+        <div class="password-wrap">
+          {{ form.password }}
+          <button type="button" class="toggle-pw" onclick="togglePw('id_password',this)" title="Show/hide">👁</button>
+        </div>
+        {% for e in form.password.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        <!-- Strength bar -->
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <p class="strength-label" id="strength-label">Enter a password</p>
+        <!-- Requirements -->
+        <ul class="req-list" id="req-list">
+          <li id="req-len">8+ chars</li>
+          <li id="req-upper">Uppercase</li>
+          <li id="req-lower">Lowercase</li>
+          <li id="req-num">Number</li>
+        </ul>
+      </div>
+
+      <!-- CONFIRM PASSWORD -->
+      <div class="field-wrap">
+        <label class="field-label" for="id_confirm_password">Confirm Password</label>
+        <div class="password-wrap">
+          {{ form.confirm_password }}
+          <button type="button" class="toggle-pw" onclick="togglePw('id_confirm_password',this)" title="Show/hide">👁</button>
+        </div>
+        {% for e in form.confirm_password.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+        <p class="field-error" id="match-error" style="display:none">Passwords do not match</p>
+      </div>
+
+      {% if form.non_field_errors %}
+      <div style="background:rgba(200,60,60,.12);border:1px solid rgba(200,60,60,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;color:#ff9090;font-size:.9rem;">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <button type="submit" class="btn-submit" id="submit-btn">
+        ✦ Create My Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="{% url 'signin' %}">Sign In</a>
+      &nbsp;·&nbsp;
+      <a href="{% url 'homepage' %}" style="color:var(--silver)">Browse as guest</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle password visibility
+function togglePw(fieldId, btn) {
+  const f = document.getElementById(fieldId);
+  f.type = f.type === 'password' ? 'text' : 'password';
+  btn.textContent = f.type === 'password' ? '👁' : '🙈';
+}
+
+// Password strength checker
+const pwField  = document.getElementById('id_password');
+const cpwField = document.getElementById('id_confirm_password');
+const fill     = document.getElementById('strength-fill');
+const label    = document.getElementById('strength-label');
+
+const reqs = {
+  len:   { el: document.getElementById('req-len'),   test: p => p.length >= 8 },
+  upper: { el: document.getElementById('req-upper'), test: p => /[A-Z]/.test(p) },
+  lower: { el: document.getElementById('req-lower'), test: p => /[a-z]/.test(p) },
+  num:   { el: document.getElementById('req-num'),   test: p => /[0-9]/.test(p) },
+};
+
+pwField.addEventListener('input', () => {
+  const p     = pwField.value;
+  let score   = 0;
+  Object.values(reqs).forEach(r => {
+    const ok = r.test(p);
+    r.el.classList.toggle('met', ok);
+    if (ok) score++;
+  });
+
+  const pct    = score / 4 * 100;
+  const colors = ['','#ff4444','#ff8800','#f0c040','#44cc44'];
+  const labels = ['','Too weak','Fair','Good','Strong'];
+  fill.style.width      = pct + '%';
+  fill.style.background = colors[score] || colors[1];
+  label.textContent     = p.length === 0 ? 'Enter a password' : labels[score];
+  label.style.color     = colors[score] || 'var(--silver)';
+
+  checkMatch();
+});
+
+cpwField.addEventListener('input', checkMatch);
+
+function checkMatch() {
+  const err = document.getElementById('match-error');
+  if (cpwField.value.length === 0) { err.style.display = 'none'; return; }
+  err.style.display = pwField.value !== cpwField.value ? 'block' : 'none';
+}
+</script>
+{% endblock %}

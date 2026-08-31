@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}{{ story.title }} — StoryForge{% endblock %}
+
+{% block extra_css %}
+<style>
+  #loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,11,20,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  #loading-overlay.active { display: flex; }
+
+  .spinner-rune {
+    font-size: 3rem;
+    animation: spin-rune 1.5s linear infinite;
+  }
+  @keyframes spin-rune {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  #ending-container { display: none; }
+  #ending-container.visible { display: block; animation: fadeIn 0.8s ease forwards; }
+
+  #choices-container { transition: opacity 0.3s; }
+  #choices-container.hidden { opacity: 0; pointer-events: none; }
+
+  .story-panel { transition: opacity 0.3s; }
+  .story-panel.fading { opacity: 0; }
+
+  .play-topbar {
+    background: rgba(13,11,20,0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(201,150,63,0.15);
+    padding: 0.75rem 0;
+    position: sticky;
+    top: 56px;
+    z-index: 100;
+  }
+
+  /* Animations */
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(15px);
+    animation: slideUpFade 0.5s ease forwards;
+  }
+  @keyframes slideUpFade {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .btn-choice {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-choice:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(201,150,63,0.25);
+    border-color: var(--gold);
+  }
+  
+  .cursor {
+    display: inline-block;
+    width: 6px;
+    height: 1.1em;
+    background-color: var(--gold);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Dramatic Ending Animations */
+  .ending-screen {
+    padding: 3rem;
+    border-radius: 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: endingReveal 1.5s ease forwards;
+  }
+  @keyframes endingReveal {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  
+  .ending-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    animation: ending-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes ending-pulse {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.15); filter: brightness(1.3); }
+  }
+  
+  .ending-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(28px, 4vw, 40px);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .ending-good {
+    background: radial-gradient(circle at center, rgba(109,191,130,0.15) 0%, rgba(13,11,20,0) 70%);
+    box-shadow: 0 0 40px rgba(109,191,130,0.1);
+  }
+  .ending-good .ending-title {
+    color: #6dbf82;
+    text-shadow: 0 0 20px rgba(109,191,130,0.5);
+  }
+
+  .ending-bad {
+    background: radial-gradient(circle at center, rgba(232,112,96,0.15) 0%, rgba(13,11,20,0) 70%);
+    box-shadow: 0 0 40px rgba(232,112,96,0.1);
+  }
+  .ending-bad .ending-title {
+    color: #e87060;
+    text-shadow: 0 0 20px rgba(232,112,96,0.5);
+  }
+
+  .ending-neutral {
+    background: radial-gradient(circle at center, rgba(201,150,63,0.15) 0%, rgba(13,11,20,0) 70%);
+    box-shadow: 0 0 40px rgba(201,150,63,0.1);
+  }
+  .ending-neutral .ending-title {
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,150,63,0.5);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+  <span class="spinner-rune">✦</span>
+  <span style="font-family:'Cinzel',serif;color:var(--gold);letter-spacing:0.2em;font-size:0.85rem;">TURNING THE PAGE…</span>
+</div>
+
+<!-- Top Bar -->
+<div class="play-topbar">
+  <div class="container d-flex align-items-center justify-content-between gap-3">
+    <a href="{% url 'story_detail' story.id %}"
+       style="color:var(--silver);text-decoration:none;font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.1em;white-space:nowrap;text-transform:uppercase;">
+      <i class="bi bi-chevron-left"></i> {{ story.title }}
+    </a>
+
+    <div class="flex-grow-1" style="max-width:300px;">
+      <div class="d-flex justify-content-between mb-1">
+        <span class="progress-label">Journey</span>
+        <span class="progress-label" id="progress-label">{{ visited_count }} / {{ total_nodes }} scenes</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-fill" id="progress-fill" style="width:{{ progress_pct }}%"></div>
+      </div>
+    </div>
+
+    <a href="{% url 'story_restart' story.id %}"
+       onclick="return confirm('Restart from the beginning?')"
+       style="color:var(--silver);text-decoration:none;font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.1em;white-space:nowrap;text-transform:uppercase;"
+       title="Restart Story">
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </a>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+
+      <!-- Story Text Panel -->
+      <div class="story-panel mb-4 fade-in" id="story-panel" data-initial-text="{{ node.text|escapejs }}">
+        <p id="story-text"></p>
+      </div>
+
+      <!-- Choices -->
+      {% if not node.is_ending %}
+      <div id="choices-container" class="fade-in">
+        <p style="font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.2em;color:var(--silver);text-transform:uppercase;margin-bottom:1rem;">
+          ✦ What do you do?
+        </p>
+        <div id="choices-list">
+          {% for choice in choices %}
+          <button class="btn-choice stagger-item" style="animation-delay: {{ forloop.counter0|add:1|amult:100 }}ms;" data-choice-id="{{ choice.id }}" onclick="makeChoice({{ choice.id }})">
+            {{ choice.choice_text }}
+          </button>
+          {% empty %}
+          <p class="text-silver fst-italic">No choices here. <a href="{% url 'story_restart' story.id %}">Restart</a>.</p>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Ending Screen -->
+      {% if node.is_ending %}
+      <div id="ending-container" class="visible">
+        {% include "stories/_ending.html" with node=node story=story %}
+      </div>
+      {% else %}
+      <div id="ending-container"></div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<!-- JS Data -->
+<script>
+  const STORY_ID   = {{ story.id }};
+  const CHOOSE_URL = "{% url 'story_choose' story.id %}";
+  const RESTART_URL = "{% url 'story_restart' story.id %}";
+  const CSRFTOKEN  = "{{ csrf_token }}";
+  const TOTAL_NODES = {{ total_nodes }};
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let isAnimating = false;
+
+async function makeChoice(choiceId) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  document.querySelectorAll('.btn-choice').forEach(b => { b.disabled = true; });
+  document.getElementById('loading-overlay').classList.add('active');
+
+  const panel = document.getElementById('story-panel');
+  panel.classList.add('fading');
+
+  try {
+    const response = await fetch(CHOOSE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRFTOKEN },
+      body: JSON.stringify({ choice_id: choiceId }),
+    });
+
+    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+    const data = await response.json();
+
+    await sleep(400);
+    document.getElementById('loading-overlay').classList.remove('active');
+
+    panel.classList.remove('fading');
+    updateProgress(data.visited_count, data.total_nodes, data.progress_pct);
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Wait for text to finish typing before showing choices
+    await typeWriterEffect(document.getElementById('story-text'), data.node_text, 15);
+
+    if (data.is_ending) {
+      showEnding(data);
+    } else {
+      updateChoices(data.choices);
+    }
+
+  } catch (err) {
+    console.error('Choice error:', err);
+    document.getElementById('loading-overlay').classList.remove('active');
+    panel.classList.remove('fading');
+    alert('Something went wrong. Please try again.');
+    document.querySelectorAll('.btn-choice').forEach(b => { b.disabled = false; });
+  }
+
+  isAnimating = false;
+}
+
+function updateChoices(choices) {
+  const container = document.getElementById('choices-container');
+  const list = document.getElementById('choices-list');
+  const endingContainer = document.getElementById('ending-container');
+
+  endingContainer.classList.remove('visible');
+  endingContainer.innerHTML = '';
+  list.innerHTML = '';
+
+  if (choices.length === 0) {
+    list.innerHTML = `<p class="text-silver fst-italic">No choices available. <a href="${RESTART_URL}">Restart</a>.</p>`;
+  } else {
+    choices.forEach((choice, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-choice stagger-item';
+      btn.style.animationDelay = `${(index + 1) * 100}ms`;
+      btn.textContent = choice.text;
+      btn.onclick = () => makeChoice(choice.id);
+      list.appendChild(btn);
+    });
+  }
+
+  container.classList.remove('hidden');
+  container.style.animation = 'none';
+  container.offsetHeight; // reflow
+  container.style.animation = 'fadeIn 0.5s ease forwards';
+}
+
+function showEnding(data) {
+  document.getElementById('choices-container').classList.add('hidden');
+
+  const endingContainer = document.getElementById('ending-container');
+  let icon, title, colorClass;
+
+  if (data.ending_type === 'good') {
+    icon = '🌟'; title = 'A Glorious Ending'; colorClass = 'ending-good';
+  } else if (data.ending_type === 'bad') {
+    icon = '💀'; title = 'A Dark Fate'; colorClass = 'ending-bad';
+  } else {
+    icon = '🌙'; title = 'The Path Ends Here'; colorClass = 'ending-neutral';
+  }
+
+  endingContainer.innerHTML = `
+    <div class="ending-screen ${colorClass}">
+      <div class="ending-icon">${icon}</div>
+      <div class="ending-title">${title}</div>
+      <hr class="gold-divider mt-3">
+      <p class="text-silver fst-italic mb-4">Your journey through this tale is complete.</p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="${RESTART_URL}" class="btn-forge btn-forge-filled">
+          <i class="bi bi-arrow-counterclockwise me-1"></i> Play Again
+        </a>
+        <a href="/" class="btn-forge">
+          <i class="bi bi-grid me-1"></i> More Stories
+        </a>
+      </div>
+    </div>`;
+  endingContainer.classList.add('visible');
+}
+
+function updateProgress(visited, total, pct) {
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = `${visited} / ${total} scenes`;
+}
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function typeWriterEffect(element, text, speed = 15) {
+  element.innerHTML = '<span class="typed-text"></span><span class="cursor"></span>';
+  const textContainer = element.querySelector('.typed-text');
+  
+  const choicesContainer = document.getElementById('choices-container');
+  if (choicesContainer) choicesContainer.classList.add('hidden');
+  
+  for (let i = 0; i < text.length; i++) {
+    textContainer.textContent += text.charAt(i);
+    await sleep(speed);
+  }
+  
+  if (choicesContainer) choicesContainer.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const panel = document.getElementById('story-panel');
+  if (panel) {
+    const initialText = panel.getAttribute('data-initial-text');
+    if (initialText) {
+      typeWriterEffect(document.getElementById('story-text'), initialText, 20);
+    }
+  }
+});
+</script>
+{% endblock %}
