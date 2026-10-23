@@ -1,137 +1,112 @@
-"""
-forms.py — StoryForge Forms
-
-  SignUpForm   → username + password + confirm password
-  SignInForm   → username + password
-  CommentForm  → story comment
-  ProfileForm  → edit bio & avatar
-  UserEditForm → edit name & email
-"""
-
 from django import forms
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-from .models import Comment, Profile
-import re
+from .models import UserAccount, Story, Rating, GENRE_CHOICES
 
 
-# ═══════════════════════════════════════════════════════════════
-#  SIGN UP FORM
-# ═══════════════════════════════════════════════════════════════
 class SignUpForm(forms.Form):
     username = forms.CharField(
-        max_length=150, min_length=3, label='Username',
-        widget=forms.TextInput(attrs={
-            'class': 'forge-input', 'placeholder': 'Choose a username', 'autofocus': True,
-        }),
-        error_messages={
-            'required': 'Please choose a username.',
-            'min_length': 'Username must be at least 3 characters.',
-        }
+        max_length=150,
+        widget=forms.TextInput(attrs={'placeholder': 'Choose a username', 'autocomplete': 'username'})
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'your@email.com', 'autocomplete': 'email'})
     )
     password = forms.CharField(
-        min_length=6, label='Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'forge-input', 'placeholder': 'Create a password (min 6 characters)',
-        }),
-        error_messages={
-            'required': 'Please enter a password.',
-            'min_length': 'Password must be at least 6 characters.',
-        }
+        min_length=6,
+        widget=forms.PasswordInput(attrs={'placeholder': 'Min 6 characters', 'autocomplete': 'new-password'})
     )
     confirm_password = forms.CharField(
-        label='Confirm Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'forge-input', 'placeholder': 'Repeat your password',
-        }),
-        error_messages={'required': 'Please confirm your password.'}
+        widget=forms.PasswordInput(attrs={'placeholder': 'Repeat password', 'autocomplete': 'new-password'})
     )
 
     def clean_username(self):
-        username = self.cleaned_data.get('username', '').strip()
-        if not re.match(r'^[\w.\-]+$', username):
-            raise ValidationError('Only letters, numbers, underscores, dots, hyphens allowed.')
+        username = self.cleaned_data['username'].strip()
         if User.objects.filter(username__iexact=username).exists():
-            raise ValidationError('That username is already taken. Please choose another.')
+            raise forms.ValidationError('That username is already taken.')
         return username
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
 
     def clean(self):
         cleaned = super().clean()
-        pw  = cleaned.get('password')
+        pw = cleaned.get('password')
         cpw = cleaned.get('confirm_password')
         if pw and cpw and pw != cpw:
-            self.add_error('confirm_password', 'Passwords do not match.')
+            raise forms.ValidationError('Passwords do not match.')
         return cleaned
 
 
-# ═══════════════════════════════════════════════════════════════
-#  SIGN IN FORM
-# ═══════════════════════════════════════════════════════════════
 class SignInForm(forms.Form):
     username = forms.CharField(
-        max_length=150, label='Username',
-        widget=forms.TextInput(attrs={
-            'class': 'forge-input', 'placeholder': 'Your username', 'autofocus': True,
-        }),
-        error_messages={'required': 'Please enter your username.'}
+        widget=forms.TextInput(attrs={'placeholder': 'Username', 'autocomplete': 'username'})
     )
     password = forms.CharField(
-        label='Password',
-        widget=forms.PasswordInput(attrs={
-            'class': 'forge-input', 'placeholder': 'Your password',
-        }),
-        error_messages={'required': 'Please enter your password.'}
+        widget=forms.PasswordInput(attrs={'placeholder': 'Password', 'autocomplete': 'current-password'})
     )
 
 
-# ═══════════════════════════════════════════════════════════════
-#  COMMENT FORM
-# ═══════════════════════════════════════════════════════════════
-class CommentForm(forms.ModelForm):
+class StoryForm(forms.ModelForm):
     class Meta:
-        model  = Comment
-        fields = ('text',)
+        model = Story
+        fields = ['title', 'genre', 'cover_emoji', 'description', 'is_published']
         widgets = {
-            'text': forms.Textarea(attrs={
-                'class': 'forge-input', 'rows': 3,
-                'placeholder': 'Share your thoughts about this story…',
-            })
+            'title': forms.TextInput(attrs={'placeholder': 'Your story title...'}),
+            'cover_emoji': forms.TextInput(attrs={'placeholder': '🐉', 'maxlength': '4'}),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'A compelling teaser for your readers (2-3 sentences)...',
+                'rows': 3
+            }),
         }
-        labels = {'text': ''}
+
+    def clean_cover_emoji(self):
+        emoji = self.cleaned_data.get('cover_emoji', '').strip()
+        return emoji if emoji else '📖'
 
 
-# ═══════════════════════════════════════════════════════════════
-#  PROFILE FORM
-# ═══════════════════════════════════════════════════════════════
+class RatingForm(forms.ModelForm):
+    class Meta:
+        model = Rating
+        fields = ['stars']
+        widgets = {
+            'stars': forms.HiddenInput(),
+        }
+
+
 class ProfileForm(forms.ModelForm):
-    AVATAR_CHOICES = [
-        ('🧙','🧙 Wizard'), ('🧝','🧝 Elf'), ('🧛','🧛 Vampire'),
-        ('🦸','🦸 Hero'),   ('🦹','🦹 Villain'), ('🧚','🧚 Fairy'),
-        ('🐉','🐉 Dragon'), ('⚔️','⚔️ Warrior'), ('🚀','🚀 Explorer'),
-        ('🕵️','🕵️ Detective'),
-    ]
-    avatar_emoji = forms.ChoiceField(choices=AVATAR_CHOICES, widget=forms.RadioSelect())
+    bio = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Tell readers about yourself...'}),
+    )
+    avatar_emoji = forms.CharField(
+        max_length=4,
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': '📖', 'maxlength': '4'}),
+    )
 
     class Meta:
-        model  = Profile
-        fields = ('bio', 'avatar_emoji')
-        widgets = {
-            'bio': forms.Textarea(attrs={
-                'class': 'forge-input', 'rows': 3,
-                'placeholder': 'Tell us about yourself…', 'maxlength': 500,
-            })
-        }
+        model = UserAccount
+        fields = ['bio', 'avatar_emoji']
 
 
-# ═══════════════════════════════════════════════════════════════
-#  USER EDIT FORM
-# ═══════════════════════════════════════════════════════════════
-class UserEditForm(forms.ModelForm):
-    class Meta:
-        model  = User
-        fields = ('first_name', 'last_name', 'email')
-        widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'forge-input'}),
-            'last_name':  forms.TextInput(attrs={'class': 'forge-input'}),
-            'email':      forms.EmailInput(attrs={'class': 'forge-input'}),
-        }
+class SearchForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Search stories, authors, genres...', 'autocomplete': 'off'})
+    )
+    genre = forms.ChoiceField(
+        required=False,
+        choices=[('', 'All Genres')] + list(GENRE_CHOICES)
+    )
+    sort = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('popular',  'Most Popular'),
+            ('rating',   'Highest Rated'),
+            ('newest',   'Newest First'),
+            ('oldest',   'Oldest First'),
+        ]
+    )
