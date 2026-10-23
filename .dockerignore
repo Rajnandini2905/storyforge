@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3-journal
+venv/
+env/
+.env
+.git/
+.gitignore
+.dockerignore
+.idea/
+.vscode/
+*.log
+staticfiles/
+Story-Forge-Interactive-Storytelling-Website/
